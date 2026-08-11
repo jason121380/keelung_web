@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "at13-hair-design",
+  "compatibility_date": "2026-08-11",
+
+  // Static-asset-only Worker: there is no server-side code, so no "main" entry.
+  // "single-page-application" reproduces the behaviour of the live deployment,
+  // which answers any unknown path with index.html and a 200.
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "single-page-application"
+  }
+}

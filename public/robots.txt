@@ -1,0 +1,6 @@
+# Design proposal hosted for review, not the salon's live site.
+# It carries AT13's real contact details with generated imagery, so it must not
+# be indexed as the official AT13 Hair Design site. Lift this once the owner
+# approves and real photography replaces the generated set.
+User-agent: *
+Disallow: /

@@ -1,0 +1,12 @@
+{
+  "name": "at13-hair-design",
+  "private": true,
+  "description": "AT13 Hair Design 基隆仁三店 — static site served from a Cloudflare Worker",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
