@@ -60,8 +60,9 @@ The roster itself lives in `content-DRgEOFBw.js`. 擅長項目 bullets are store
 one string per designer with `｜` between items — the i18n layer rewrites
 that separator to ` / ` in English, so the team renderer splits on either.
 
-Designer No.9 (Una) is still on a generated image; no card was supplied for
-her.
+Every face in the team section is now the salon's own. Numbers 1–4 are
+vacant, so the roster runs 0, 5, 6, 7, 8, 10, 11, 12, 13 and 瑪利 at the
+front desk.
 
 ## Not indexable, on purpose
 
