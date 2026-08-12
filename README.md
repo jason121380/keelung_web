@@ -33,6 +33,8 @@ minified bundles by hand.
 | `public/assets/*.css` | 5 stylesheets |
 | `public/assets/*.webp` | 95 images (full, texture and thumbnail variants) |
 | `public/assets/gen/**/*.webp` | 10 real designer portraits — see below |
+| `source/designer-cards/` | The owner's original designer cards, and how to re-crop them |
+| `tools/crop-designer-cards.py` | Card → portrait, all three sizes |
 | `public/assets/*.woff2` | Subset Noto Serif TC |
 | `public/robots.txt` | Blanket `Disallow: /` — see below |
 | `wrangler.jsonc` | Worker config, static assets only |
@@ -48,6 +50,11 @@ their own house style); the portrait was cropped out of each card to 3:4 and
 the wording was moved into the site's bilingual content data, so the text
 stays selectable, translatable and responsive instead of being baked into a
 picture.
+
+The cards themselves are kept in `source/designer-cards/` — they are the
+masters, and the portraits cannot be regenerated at full quality without
+them. `tools/crop-designer-cards.py` rebuilds every portrait from them in one
+pass; see that folder's README for the roster mapping.
 
 Image ids are resolved by a glob map in `index-BMUe7iZr.js` with a
 `./assets/gen/{,thumb/,tex/}<id>.webp` fallback for anything not in the map,
