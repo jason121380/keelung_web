@@ -32,6 +32,7 @@ minified bundles by hand.
 | `public/assets/*.js` | 18 bundled chunks — app entry, three.js, GSAP, content, i18n dictionary |
 | `public/assets/*.css` | 5 stylesheets |
 | `public/assets/*.webp` | 95 images (full, texture and thumbnail variants) |
+| `public/assets/gen/**/*.webp` | 10 real designer portraits — see below |
 | `public/assets/*.woff2` | Subset Noto Serif TC |
 | `public/robots.txt` | Blanket `Disallow: /` — see below |
 | `wrangler.jsonc` | Worker config, static assets only |
@@ -39,13 +40,38 @@ minified bundles by hand.
 The site is bilingual (zh-Hant-TW / en) and uses a WebGL canvas driven by
 three.js, with GSAP for transitions.
 
+## The designer photos
+
+The team section shows the salon's own photography. The owner supplied ten
+finished designer cards (portrait plus name, number and 擅長項目, laid out in
+their own house style); the portrait was cropped out of each card to 3:4 and
+the wording was moved into the site's bilingual content data, so the text
+stays selectable, translatable and responsive instead of being baked into a
+picture.
+
+Image ids are resolved by a glob map in `index-BMUe7iZr.js` with a
+`./assets/gen/{,thumb/,tex/}<id>.webp` fallback for anything not in the map,
+which is why these portraits sit in `public/assets/gen/` under plain
+unhashed names rather than alongside the content-hashed build output. Each
+one ships in the three sizes the site asks for: full 1200×1600, `tex/`
+768×1024, `thumb/` 400×533.
+
+The roster itself lives in `content-DRgEOFBw.js`. 擅長項目 bullets are stored
+one string per designer with `｜` between items — the i18n layer rewrites
+that separator to ` / ` in English, so the team renderer splits on either.
+
+Designer No.9 (Una) is still on a generated image; no card was supplied for
+her.
+
 ## Not indexable, on purpose
 
 Both `public/robots.txt` and the `<meta name="robots" content="noindex,
 nofollow">` tag in `index.html` block search engines. Per the comments left in
 the source, this is a design proposal carrying AT13's real address and phone
-number but generated imagery rather than the salon's own photography. Lift both
-only once the owner approves and real photos are in place.
+number but generated imagery rather than the salon's own photography. The
+designer portraits are now the salon's own; the work gallery, salon interiors,
+harbour and mood images are still generated. Lift both only once the owner
+approves and the rest of the imagery is real too.
 
 ## Local preview
 
