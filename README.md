@@ -39,6 +39,57 @@ minified bundles by hand.
 The site is bilingual (zh-Hant-TW / en) and uses a WebGL canvas driven by
 three.js, with GSAP for transitions.
 
+## Patches applied on top of the snapshot
+
+Because this is build output, anything fixed here is fixed in a minified
+bundle and will be **silently reverted by the next real build**. Each patch is
+listed with what to change in the original `src/` so it can be carried over.
+
+### Designer photo resolution (`public/assets/index-B1COvtui.js`)
+
+The team section's `sizes` attribute — `(max-width: 720px) 62vw,
+(max-width: 1200px) 34vw, 22vw` — did not describe the layout it actually
+renders. The designer card frames are laid out by `.team__rail` at breakpoints
+700px and 1100px, not 720/1200, and are much wider than declared:
+
+| Viewport | Card | Declared | Actual | Result |
+| --- | --- | --- | --- | --- |
+| ≤ 700px | any | 62vw | 100vw (full bleed) | 1.6× upscale |
+| 701–1100px | `lead` | 34vw | 91.6vw | 2.7× upscale |
+| 701–1100px | `full` | 34vw | 60.6vw | 1.8× upscale |
+| ≥ 1101px | `lead` | 22vw | 37.2vw | 1.7× upscale |
+
+So the browser fetched a candidate one step too small and scaled it up: the
+lead card drew the 400w thumbnail into a 536px box at 1× and the 768w texture
+variant into 1072–1170 device px at 2×/3×. Designer photos rendered visibly
+soft on every device.
+
+The single `sizes` string is now a per-rank lookup, since the three card ranks
+occupy three different track spans, and the render function already knows the
+rank before it builds the image:
+
+| Rank | `sizes` |
+| --- | --- |
+| `lead` | `(max-width: 700px) 100vw, (max-width: 1100px) 92vw, 38vw` |
+| `full` | `(max-width: 700px) 100vw, (max-width: 1100px) 61vw, 30vw` |
+| `std` | `(max-width: 700px) 100vw, (max-width: 1100px) 45vw, 22vw` |
+
+Measured against the real frame widths from 360px to 1920px, every rank now
+lands within 2% of its declared width, on the safe side. **In `src/`:** the
+constant is the team equivalent of the `sizes` strings used by the craft and
+work rails; make it rank-keyed and pass the card's rank when building the
+`<img>`.
+
+## Designer cards still carry no portraits
+
+Each of the twelve designer cards reuses one of the twelve images from the
+Work rail, credited in the caption as `作品｜<work title>` — so the same twelve
+pictures appear twice on the page and none of them shows the designer. That is
+honest as far as it goes, but it is placeholder content, not a bug to fix in
+code: real portraits have to come from the salon. Once they exist, add them as
+their own assets and point each entry's `img` at its portrait instead of at a
+work id.
+
 ## Not indexable, on purpose
 
 Both `public/robots.txt` and the `<meta name="robots" content="noindex,
