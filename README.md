@@ -80,6 +80,35 @@ constant is the team equivalent of the `sizes` strings used by the craft and
 work rails; make it rank-keyed and pass the card's rank when building the
 `<img>`.
 
+### Craft and work rail resolution (`public/assets/index-B1COvtui.js`)
+
+The same mistake, from the same stale 720/1200 breakpoints, in the two other
+image rails. Auditing all three at sixteen viewport widths turned up:
+
+| Rail | Viewport | Declared | Actual | Result |
+| --- | --- | --- | --- | --- |
+| craft | 721–1100px | 46vw | 91.6vw | **2.0× upscale** |
+| craft | ≥ 1201px | 32vw | 45vw | 1.4× upscale |
+| craft | ≤ 700px | 78vw | 100vw | 1.3× upscale |
+| work | ≤ 460px | 82vw | 100vw | 1.2× upscale |
+| work | 1201–1600px | 30vw | 35vw | 1.2× upscale |
+
+New strings:
+
+- craft: `(max-width: 700px) 100vw, (max-width: 1100px) 92vw, 46vw`
+- work: `(max-width: 460px) 100vw, (max-width: 700px) 446px, (max-width: 1200px) 44vw, 36vw`
+
+The work rail needs the fixed `446px` step because its cards stop growing at
+446px wide between 461px and 700px of viewport — as a percentage that band
+runs from 97vw down to 64vw, so no single `vw` value covers it without
+badly over-declaring at the wide end. Above 1200px the cards grow at 35vw
+until they cap at 560px; `36vw` covers the growing part and over-declares
+past ~1600px, which costs a little bandwidth on very wide screens but never
+softens the image.
+
+After the change every rail is at or below 1.00× — declared width meets or
+exceeds actual width — at every measured viewport.
+
 ## Designer cards still carry no portraits
 
 Each of the twelve designer cards reuses one of the twelve images from the
