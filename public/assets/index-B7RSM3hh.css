@@ -18,3 +18,17 @@ transform:none}
 .team__card .team__frame,.team__card[data-rank=lead] .team__frame{aspect-ratio:3 / 4}
 }
 @media(min-width:1101px){.team__rail>.team__card:nth-child(n){grid-column:1 / -1;grid-row:auto}}
+
+/* team: every designer gets a portrait on phones */
+@media(max-width:700px){
+.team__card[data-rank=std]:not(:last-child){padding-block-start:clamp(1.4rem,3.6vh,2.25rem)}
+.team__card[data-rank=std]:not(:last-child)>.team__plate{display:grid;grid-column:1 / -1;grid-row:2;margin-inline:var(--bleed)}
+.team__card[data-rank=std]:not(:last-child) .team__name,
+.team__card[data-rank=std]:not(:last-child)>.team__no{grid-row:2;align-self:end;position:relative;z-index:1}
+.team__card[data-rank=std]:not(:last-child) .team__role{padding-block-start:1.5rem}
+.team__card[data-rank=std]:not(:last-child) .team__spec{padding-block-start:.5rem}
+.team__card[data-rank=std]:not(:last-child) .team__note{padding-block-start:.7rem}
+.team__rail>.team__card[data-rank] .team__frame{aspect-ratio:3 / 4}
+.team__rail>.team__card[data-rank] .team__name,
+.team__rail>.team__card[data-rank]>.team__no{margin-block-end:1.4rem}
+}
