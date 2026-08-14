@@ -174,9 +174,27 @@ someone joins or leaves:
 | `titles.team.title` — `八雙手` / `Eight pairs of hands` | `content-*.js`, and the static copy in `public/index.html` | **every card**, front desk included |
 | `manifesto.stat` — `設計師 / Designers` | `content-*.js` | **designers only**, front desk excluded |
 
-At the last edit that is 8 cards and 7 designers. The headline appears twice —
+At the last edit that is 10 cards and 9 designers. The headline appears twice —
 once in the content bundle, once as the no-JS fallback in `index.html` — and
 both copies must match.
+
+The roster as the salon last gave it, in card order:
+
+| No. | Name | Role |
+| --- | --- | --- |
+| 0 | Eric | 副理 · assistant manager |
+| 5 | Sunny | designer |
+| 6 | Wenny（胖胖） | designer |
+| 7 | 嘎嘎 | designer |
+| 8 | Jerry | designer |
+| 10 | Amy | designer |
+| 11 | 七七 | designer |
+| 12 | Wendy | designer |
+| 13 | 垣垣 | designer |
+| — | 瑪莉 | 櫃檯公關 · front desk, guest relations |
+
+Numbers 1, 2, 3 and 9 are retired — those designers have left — and the gaps
+are deliberate, so do not renumber to close them.
 
 ## Designer cards still carry no portraits
 
