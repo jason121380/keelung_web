@@ -260,13 +260,21 @@ The roster as the salon last gave it, in card order:
 | 7 | 嘎嘎 | designer |
 | 8 | Jerry（仁傑） | designer |
 | 10 | Amy | designer |
-| 11 | 七七 | designer |
+| 11 | 七七（萱蓁） | designer |
 | 12 | Wendy | designer |
-| 13 | 垣垣 | designer |
-| — | 瑪莉 | 櫃檯公關 · front desk, guest relations |
+| 13 | 垣垣（垣潔） | designer |
+| — | 瑪利 | 櫃台公關 · front desk, guest relations |
 
 Numbers 1, 2, 3 and 9 are retired — those designers have left — and the gaps
 are deliberate, so do not renumber to close them.
+
+**NO.13 in the corner of every designer card is the shop, not the designer.**
+瑪利's card says 「來到 AT HAIR DESIGN NO.13 的顧客」— AT13 *is* AT Hair Design
+No.13. It is not a template slip to be corrected.
+
+**瑪利, not 瑪莉.** Her own card and the original site data both spell it 瑪利,
+and give her role as 櫃台公關. A message from the salon once wrote 櫃檯公關瑪莉;
+the two published sources win until they say otherwise.
 
 **Wenny at No.6 and Wendy at No.12 are two different people.** The salon has
 confirmed this. They sit two cards apart and the names differ by one letter,
