@@ -268,6 +268,10 @@ The roster as the salon last gave it, in card order:
 Numbers 1, 2, 3 and 9 are retired — those designers have left — and the gaps
 are deliberate, so do not renumber to close them.
 
+**Eric, Amy and Wendy carry word-for-word the same description.** So do their
+cards, and the salon has confirmed it stays. Three identical paragraphs down
+one page reads like a copy-paste slip; it is deliberate. Leave it.
+
 **NO.13 in the corner of every designer card is the shop, not the designer.**
 瑪利's card says 「來到 AT HAIR DESIGN NO.13 的顧客」— AT13 *is* AT Hair Design
 No.13. It is not a template slip to be corrected.
