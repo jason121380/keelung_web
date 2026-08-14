@@ -163,6 +163,21 @@ repeat the base `.team__frame` value. They are where the shape variation
 lives, so anyone who wants it back has an obvious knob — and real portraits,
 when they arrive, will almost certainly be 3:4 too.
 
+## The roster is counted in three places
+
+The team list lives in `public/assets/content-DRgEOFBw.js`. Two pieces of copy
+restate its size and do not derive from it, so both have to move whenever
+someone joins or leaves:
+
+| What | Where | Counts |
+| --- | --- | --- |
+| `titles.team.title` — `八雙手` / `Eight pairs of hands` | `content-*.js`, and the static copy in `public/index.html` | **every card**, front desk included |
+| `manifesto.stat` — `設計師 / Designers` | `content-*.js` | **designers only**, front desk excluded |
+
+At the last edit that is 8 cards and 7 designers. The headline appears twice —
+once in the content bundle, once as the no-JS fallback in `index.html` — and
+both copies must match.
+
 ## Designer cards still carry no portraits
 
 Each of the twelve designer cards reuses one of the twelve images from the
