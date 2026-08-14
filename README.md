@@ -132,6 +132,37 @@ The work rail's `alt` is deliberately left alone: it carries the technique as
 well as the title, and its image sits inside a button whose `aria-label`
 overrides the content anyway.
 
+### Designer photo proportions (`public/assets/index-B7RSM3hh.css`)
+
+Every photograph in `public/assets` is 1200×1600 — a 3:4 portrait. The
+designer frames mostly matched that, but four rules did not, and because the
+images are laid in with `object-fit: cover` and a centred `object-position`,
+the mismatch was spent entirely on cropping:
+
+| Where | Frame was | Cropped away |
+| --- | --- | --- |
+| `lead` card, ≥ 1101px | 4 / 3 | **44% of the image height** |
+| `full` card, ≤ 700px | 16 / 10 | **53%** |
+| last card, ≤ 700px | 5 / 4 | 40% |
+| `full` + `data-align=lead`, ≤ 700px | 1 / 1 | 25% |
+
+The 16:10 mobile frame was the worst: it reduced a hairstyle to a horizontal
+band of strands with no shape left to read. The store manager's hero card lost
+the top and bottom of its composition.
+
+All four now use `3 / 4`, matching the source. No designer photo is cropped
+on any axis at any breakpoint, all twelve cards share one proportion, and the
+`width`/`height` attributes the renderer sets (1200×1600) now agree with the
+rendered box, so the frames reserve exactly the right space while loading.
+Card widths and grid spans are untouched — only the frame heights change, so
+the composition of the rail is preserved. It does make the desktop rail about
+9% taller (3609px → 3922px), since the lead card is now a portrait.
+
+The four rules are left in place rather than deleted, even though they now
+repeat the base `.team__frame` value. They are where the shape variation
+lives, so anyone who wants it back has an obvious knob — and real portraits,
+when they arrive, will almost certainly be 3:4 too.
+
 ## Designer cards still carry no portraits
 
 Each of the twelve designer cards reuses one of the twelve images from the
