@@ -1,0 +1,51 @@
+name: Deploy to Cloudflare Workers
+
+# Every push to main publishes public/ to the at13-hair-design Worker.
+# Also runnable by hand from the Actions tab.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'wrangler.jsonc'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+# One deploy at a time; a newer push supersedes one still waiting.
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Fail with something readable rather than a wrangler auth error.
+      - name: Check the API token is configured
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set."
+            echo "Add it under Settings → Secrets and variables → Actions."
+            echo "Create the token in Cloudflare with the Edit Cloudflare Workers template,"
+            echo "or a custom token with Account → Workers Scripts → Edit."
+            exit 1
+          fi
+
+      # wrangler is pinned in package.json; npx fetches just it, skipping the
+      # devDependencies (sharp) that only the photo tooling needs.
+      - name: Deploy
+        run: npx --yes wrangler@4 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Only needed if the token can reach more than one account.
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Where it went
+        run: echo "https://at13-hair-design.wahmey.workers.dev/" >> "$GITHUB_STEP_SUMMARY"

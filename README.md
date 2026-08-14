@@ -170,10 +170,28 @@ npx wrangler dev
 
 ## Deploy
 
+Pushing to `main` publishes automatically, via
+`.github/workflows/deploy.yml`. It can also be run by hand from the Actions
+tab.
+
+That needs one repository secret, which only an account owner can create:
+
+1. In Cloudflare, **My Profile → API Tokens → Create Token**, using the
+   **Edit Cloudflare Workers** template (or a custom token with
+   *Account → Workers Scripts → Edit*).
+2. In GitHub, **Settings → Secrets and variables → Actions → New repository
+   secret**, named `CLOUDFLARE_API_TOKEN`.
+3. Add `CLOUDFLARE_ACCOUNT_ID` the same way only if the token can reach more
+   than one account.
+
+Until that secret exists the workflow stops on its first step and says so,
+rather than failing later with an authentication error.
+
+To deploy from your own machine instead:
+
 ```bash
 npx wrangler deploy
 ```
 
-This publishes to the `at13-hair-design` Worker. Confirm you are logged into
-the Cloudflare account that owns the `wahmey.workers.dev` subdomain first —
-`npx wrangler whoami`.
+Confirm you are logged into the Cloudflare account that owns the
+`wahmey.workers.dev` subdomain first — `npx wrangler whoami`.
