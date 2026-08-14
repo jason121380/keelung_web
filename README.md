@@ -57,7 +57,7 @@ them. `tools/crop-designer-cards.py` rebuilds every portrait from them in one
 pass; see that folder's README for the roster mapping.
 
 Image ids are resolved by a glob map in `index-BMUe7iZr.js` with a
-`./assets/gen/{,thumb/,tex/}<id>.webp` fallback for anything not in the map,
+`/assets/gen/{,thumb/,tex/}<id>.webp` fallback for anything not in the map,
 which is why these portraits sit in `public/assets/gen/` under plain
 unhashed names rather than alongside the content-hashed build output. Each
 one ships in the three sizes the site asks for: full 1200×1600, `tex/`
@@ -78,6 +78,70 @@ name overlaid below that, all at the same 3:4.
 Every face in the team section is now the salon's own. Numbers 1–4 are
 vacant, so the roster runs 0, 5, 6, 7, 8, 10, 11, 12, 13 and 瑪利 at the
 front desk.
+
+## Patches applied on top of the snapshot
+
+This is build output, so anything fixed here lives in a minified bundle and
+will be **silently reverted by the next real build**. Each is recorded with
+what to change in `src/`.
+
+### The asset fallback path is absolute
+
+The fallback above was `./assets/gen/…`, which resolves correctly from `/` but
+not from a deeper path — and the Worker answers any unknown path with
+index.html, so `/anything/else` would have looked for the portraits under
+`/anything/assets/gen/`. Every designer portrait reaches the page through that
+fallback, so it is now `/assets/gen/…`.
+
+### `sizes` describes the layout the page actually has
+
+All three rails declared breakpoints of 720px and 1200px against CSS that
+breaks at 700 and 1100, and widths well under what the cards occupy, so the
+browser picked a candidate one step too small and scaled it up — up to 2.7×
+on the team rail before the layout changed, 2.0× on craft.
+
+The team rail's numbers were re-measured against the current one-per-row
+layout rather than carried over from the old grid, because that layout changed
+every width. Each frame is now the same column the CSS defines, so `sizes`
+states it literally:
+
+| Rail | `sizes` |
+| --- | --- |
+| team | `(max-width: 700px) 100vw, clamp(8.5rem, 15vw, 14rem)` |
+| craft | `(max-width: 700px) 100vw, (max-width: 1100px) 92vw, 46vw` |
+| work | `(max-width: 460px) 100vw, (max-width: 700px) 446px, (max-width: 1200px) 44vw, 36vw` |
+
+The team value mirrors `.team__card`'s own `grid-template-columns`, so it
+tracks the root font size instead of guessing a pixel figure; Chromium
+resolves it to the measured frame width exactly, 136 / 154 / 216 / 224px
+across the range. The work rail needs its fixed `446px` step because its cards
+stop growing between 461 and 700px of viewport — as a percentage that band
+runs 97vw down to 64vw, which no single `vw` value covers without badly
+over-declaring at the wide end.
+
+Measured at sixteen viewport widths from 360 to 1920, every rail now declares
+a width at or above what it renders.
+
+### The mid variant's srcset descriptor
+
+Each variant is made by capping the **long** edge at 1024: 1024 wide for a
+square source, **768** for the 3:4 portraits — which is now every photograph
+in the team section. The descriptor said `Math.min(w, 1024)` regardless, so
+every portrait advertised its mid variant as `1024w` when the file was 768px
+across. A 33% overstatement, on the strength of which a browser settles for
+the mid variant exactly where it needs the full one. It is now derived the way
+the variant is. Verified by measuring the file behind every candidate of every
+rail's srcset: all nine agree.
+
+### Content
+
+Sunny, Wenny, 嘎嘎, 七七 and 垣垣 carried the placeholder spec, which renders
+as one generic line, while the other four designers had the real 擅長項目 from
+their cards. All five now carry the six-item list their own cards give, in the
+same `｜` form.
+
+The studio stat said 11 designers. The roster is nine plus 瑪利 at the front
+desk; it had not moved since four designers left.
 
 ## Not indexable, on purpose
 
