@@ -252,6 +252,12 @@ The roster as the salon last gave it, in card order:
 Numbers 1, 2, 3 and 9 are retired — those designers have left — and the gaps
 are deliberate, so do not renumber to close them.
 
+**Wenny at No.6 and Wendy at No.12 are two different people.** The salon has
+confirmed this. They sit two cards apart and the names differ by one letter,
+so it reads like a typo and is not one — do not merge or "correct" them.
+Wenny's card carries her nickname 胖胖 in parentheses, which is what tells the
+two of them apart at a glance; keep it unless the salon asks otherwise.
+
 ## Designer cards still carry no portraits
 
 Each of the twelve designer cards reuses one of the twelve images from the
