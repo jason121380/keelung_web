@@ -163,6 +163,62 @@ repeat the base `.team__frame` value. They are where the shape variation
 lives, so anyone who wants it back has an obvious knob — and real portraits,
 when they arrive, will almost certainly be 3:4 too.
 
+### Mid-variant srcset descriptor (`public/assets/index-B1COvtui.js`)
+
+Each image ships in three sizes, and the mid one is made by capping the
+*long* edge at 1024. For a square source that gives a 1024-wide file; for the
+3:4 portraits every photograph on this site uses, it gives a **768**-wide one.
+The srcset declared `Math.min(w, 1024)` regardless, so every portrait
+advertised its mid variant as `1024w` when the file was 768px across — a 33%
+overstatement, on the strength of which a browser would settle for the mid
+variant in places that actually needed the full one.
+
+The descriptor is now derived the same way the variant was: cap the long edge
+at 1024 and take the resulting width. Squares still declare 1024w; portraits
+declare 768w. Verified by reading every candidate in every rail's srcset off
+the page and measuring the file it points at — all nine now agree.
+
+## Adding designer photographs
+
+`tools/add-photos.mjs` ingests photographs. The page asks for an image by id
+and the bundle resolves unknown ids to a fixed path, so a photo only needs to
+be written to the right place — no bundle editing:
+
+```
+public/assets/gen/<id>.webp          full   1200 x 1600
+public/assets/gen/tex/<id>.webp      mid     768 x 1024
+public/assets/gen/thumb/<id>.webp    thumb   400 x  533
+```
+
+```bash
+npm install                                      # sharp
+node tools/add-photos.mjs eric.jpg --id team-eric
+node tools/add-photos.mjs --manifest photos.json # [{ file, id, gravity? }]
+```
+
+Every designer frame is 3:4, so each source is cropped to 3:4 before resizing.
+The script reports how much each crop costs and on which axis, so a source
+that will lose half its frame is obvious before it ships. Cropping is centred
+on the photo's own detail by default; `--gravity north` (or `south`, `center`,
+`entropy`, …) overrides that when the subject is off-centre. EXIF orientation
+is honoured first, so phone photographs do not come out sideways.
+
+Then point the designer's `img` at the id in `content-*.js`.
+
+Two things follow from real portraits going in, neither of which the script
+decides:
+
+- The caption under each card reads `作品｜<work title>`, which exists to be
+  honest that the picture is a work sample rather than the designer. Once a
+  card shows the designer, that caption is wrong and needs replacing or
+  removing.
+- `robots.txt` and the `noindex` tag are held down until the salon approves
+  and real photography is in place. See below.
+
+Unlike the hashed bundle assets these files are not content-addressed, so
+replacing a photo reuses its URL. Cloudflare serves them with an ETag, but a
+browser that already has one may hold it briefly.
+
 ## The roster is counted in three places
 
 The team list lives in `public/assets/content-DRgEOFBw.js`. Two pieces of copy

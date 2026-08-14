@@ -4,9 +4,11 @@
   "description": "AT13 Hair Design 基隆仁三店 — static site served from a Cloudflare Worker",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "photos": "node tools/add-photos.mjs"
   },
   "devDependencies": {
+    "sharp": "^0.34.5",
     "wrangler": "^4.0.0"
   }
 }
