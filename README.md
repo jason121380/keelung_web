@@ -178,6 +178,22 @@ at 1024 and take the resulting width. Squares still declare 1024w; portraits
 declare 768w. Verified by reading every candidate in every rail's srcset off
 the page and measuring the file it points at — all nine now agree.
 
+## Specialty lists
+
+`spec` is one string per designer, split into bullets on **；**. It used to
+split on 、 as well, which the salon's own lists rule out — items like
+`韓系、日系質感燙髮` are a single bullet containing a comma. Craft tags split
+on ` · ` and are unaffected.
+
+A card shows its list unless the spec is the shared placeholder, which is
+flagged `ph:!0` in the content file. Before, the rule was "show it if no other
+designer has the same one", which broke the moment three designers turned out
+to share an identical real list — theirs would have silently vanished.
+Designers still waiting for their cards keep the placeholder and show nothing.
+
+English is a translation of the Chinese the salon supplied on the cards; the
+Chinese is theirs verbatim.
+
 ## Adding designer photographs
 
 `tools/add-photos.mjs` ingests photographs. The page asks for an image by id
@@ -238,11 +254,11 @@ The roster as the salon last gave it, in card order:
 
 | No. | Name | Role |
 | --- | --- | --- |
-| 0 | Eric | 副理 · assistant manager |
-| 5 | Sunny | designer |
+| 0 | Eric | 0號設計師 · 副理, assistant manager |
+| 5 | Sunny（阿晴） | designer |
 | 6 | Wenny（胖胖） | designer |
 | 7 | 嘎嘎 | designer |
-| 8 | Jerry | designer |
+| 8 | Jerry（仁傑） | designer |
 | 10 | Amy | designer |
 | 11 | 七七 | designer |
 | 12 | Wendy | designer |
