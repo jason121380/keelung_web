@@ -109,6 +109,29 @@ softens the image.
 After the change every rail is at or below 1.00× — declared width meets or
 exceeds actual width — at every measured viewport.
 
+### Designer photo alt text (`public/assets/index-B1COvtui.js`)
+
+Each designer photo carried an `alt` that was, word for word, the visible
+`<figcaption>` sitting directly beneath it in the same `<figure>` — `作品：煙灰漸層`
+against a caption reading `作品｜煙灰漸層`. Both are built from the same work
+title, so this held for all twelve cards in both languages. A screen reader
+announced the work title twice, before ever reaching the designer's name.
+
+The image is now `alt=""`, which is the convention this codebase already uses
+for the craft cards: when a visible caption in the same figure describes the
+image, the caption is the description and the image should not repeat it. The
+figure keeps its accessible name from the caption, so nothing is lost:
+
+```
+- figure "作品｜黑髮 · 一道光"
+  - heading "Eric" [level=3]
+  - paragraph: 店長 · 0號設計師
+```
+
+The work rail's `alt` is deliberately left alone: it carries the technique as
+well as the title, and its image sits inside a button whose `aria-label`
+overrides the content anyway.
+
 ## Designer cards still carry no portraits
 
 Each of the twelve designer cards reuses one of the twelve images from the
