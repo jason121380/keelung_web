@@ -19,7 +19,9 @@ them.
 | `no13-yuanyuan.png` | 垣垣（垣潔） | 13號設計師 |
 | `front-mary.png` | 瑪莉 | 櫃台公關 |
 
-Received 2026-08-12, all 1600px wide.
+Received 2026-09-22 (replacing the 2026-08-12 set, which remains in git
+history). This set is not one uniform size — widths run 962 to 1028px — so
+each card carries its own crop rows in the script's table.
 
 Two things differ between the cards and the site on purpose. The names lost
 their parenthesised given names for 8號, 11號 and 13號 at the owner's

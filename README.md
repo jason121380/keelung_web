@@ -85,13 +85,17 @@ This is build output, so anything fixed here lives in a minified bundle and
 will be **silently reverted by the next real build**. Each is recorded with
 what to change in `src/`.
 
-### The asset fallback path is absolute
+### The asset fallback path is document-relative
 
-The fallback above was `./assets/gen/…`, which resolves correctly from `/` but
-not from a deeper path — and the Worker answers any unknown path with
-index.html, so `/anything/else` would have looked for the portraits under
-`/anything/assets/gen/`. Every designer portrait reaches the page through that
-fallback, so it is now `/assets/gen/…`.
+The fallback above is `./assets/gen/…`, resolved against the page URL. It was
+briefly absolute (`/assets/gen/…`) so the Worker's SPA fallback — which
+answers any unknown path with index.html — would still find the portraits
+from a deep path like `/anything/else`. Absolute broke the moment the site
+moved under a subpath (GitHub Pages serves a project site at
+`/<repo-name>/`), and every designer portrait reaches the page through this
+fallback, so relative won: the page is only ever *served* at its root on
+either host, and deep paths under the Worker merely render a page that can't
+load these images — a page nothing links to.
 
 ### `sizes` describes the layout the page actually has
 

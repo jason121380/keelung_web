@@ -18,20 +18,21 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "source" / "designer-cards"
 DEST = ROOT / "public" / "assets" / "gen"
 
-TOP = 140  # first row below the wordmark overlay
-
-# asset id -> (card, y where the photo block ends, face centre x in 1600-wide space)
+# asset id -> (card, first row below the wordmark overlay, y where the photo
+# block ends, face centre x). The 2026-09-22 cards are not all the same size,
+# so each carries its own top row; the boundary row was measured as the top of
+# the contiguous flat-dark run that reaches the bottom of the frame.
 CARDS = {
-    "team-eric":  ("no00-eric.png",     1500, 851),
-    "team-sunny": ("no05-sunny.png",    1900, 850),
-    "team-wenny": ("no06-wenny.png",    1900, 779),
-    "team-gaga":  ("no07-gaga.png",     1900, 797),
-    "team-jerry": ("no08-jerry.png",    1900, 864),
-    "team-amy":   ("no10-amy.png",      1900, 879),
-    "team-qiqi":  ("no11-qiqi.png",     1900, 825),
-    "team-wendy": ("no12-wendy.png",    1500, 789),
-    "team-yuan":  ("no13-yuanyuan.png", 1900, 909),
-    "team-mary":  ("front-mary.png",    1900, 817),
+    "team-eric":  ("no00-eric.png",     90,  964, 524),
+    "team-sunny": ("no05-sunny.png",    85, 1150, 436),
+    "team-wenny": ("no06-wenny.png",    85, 1150, 455),
+    "team-gaga":  ("no07-gaga.png",     85, 1149, 455),
+    "team-jerry": ("no08-jerry.png",    86, 1169, 492),
+    "team-amy":   ("no10-amy.png",      84, 1142, 471),
+    "team-qiqi":  ("no11-qiqi.png",     85, 1141, 484),
+    "team-wendy": ("no12-wendy.png",    90,  964, 452),
+    "team-yuan":  ("no13-yuanyuan.png", 85, 1150, 465),
+    "team-mary":  ("front-mary.png",    89, 1202, 466),
 }
 
 # subdirectory -> (width, height, webp quality); "" is the full-size variant
@@ -42,13 +43,13 @@ def main() -> None:
     for sub in VARIANTS:
         (DEST / sub).mkdir(parents=True, exist_ok=True)
 
-    for asset_id, (card, bottom, face_x) in CARDS.items():
+    for asset_id, (card, top, bottom, face_x) in CARDS.items():
         im = Image.open(SRC / card).convert("RGB")
         width, _ = im.size
-        height = bottom - TOP
+        height = bottom - top
         crop_w = round(height * 3 / 4)
         x0 = max(0, min(width - crop_w, round(face_x - crop_w / 2)))
-        portrait = im.crop((x0, TOP, x0 + crop_w, bottom))
+        portrait = im.crop((x0, top, x0 + crop_w, bottom))
 
         for sub, (w, h, quality) in VARIANTS.items():
             out = DEST / sub / f"{asset_id}.webp"
