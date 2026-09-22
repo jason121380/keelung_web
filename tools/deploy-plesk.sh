@@ -39,6 +39,34 @@ validate_site() {
   [ -d "$dir/assets" ] || die "missing assets directory in $dir"
 }
 
+files_equal() {
+  source_file=$1
+  staged_file=$2
+  exec 3< "$source_file"
+  exec 4< "$staged_file"
+
+  while :; do
+    source_line=
+    staged_line=
+    source_status=0
+    staged_status=0
+    IFS= read -r source_line <&3 || source_status=$?
+    IFS= read -r staged_line <&4 || staged_status=$?
+
+    if [ "$source_status" -ne "$staged_status" ] \
+      || [ "$source_line" != "$staged_line" ]; then
+      exec 3<&-
+      exec 4<&-
+      return 1
+    fi
+
+    [ "$source_status" -eq 0 ] || break
+  done
+
+  exec 3<&-
+  exec 4<&-
+}
+
 validate_absolute_path source "$SOURCE_DIR"
 validate_absolute_path live "$LIVE_DIR"
 validate_absolute_path next "$NEXT_DIR"
@@ -81,9 +109,7 @@ rm -rf "$NEXT_DIR"
 mkdir "$NEXT_DIR"
 cp -a "$SOURCE_DIR"/. "$NEXT_DIR"/
 validate_site "$NEXT_DIR"
-SOURCE_INDEX_CKSUM=$(cksum < "$SOURCE_DIR/index.html")
-STAGED_INDEX_CKSUM=$(cksum < "$NEXT_DIR/index.html")
-[ "$SOURCE_INDEX_CKSUM" = "$STAGED_INDEX_CKSUM" ] \
+files_equal "$SOURCE_DIR/index.html" "$NEXT_DIR/index.html" \
   || die 'staged index.html does not match source'
 
 if [ "${AT13_TEST_FAIL_AFTER_STAGE_COPY:-0}" = 1 ]; then

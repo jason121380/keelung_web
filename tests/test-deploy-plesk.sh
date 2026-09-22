@@ -287,8 +287,8 @@ test_staging_failure_cleans_next_and_preserves_live() {
   pass 'staging failure cleans next and preserves live'
 }
 
-test_deploy_succeeds_without_cmp() {
-  case_root="$TEST_ROOT/no-cmp"
+test_deploy_succeeds_without_external_comparator() {
+  case_root="$TEST_ROOT/no-external-comparator"
   source_dir="$case_root/repository/public"
   live_dir="$case_root/httpdocs/at13"
   next_dir="$case_root/httpdocs/at13-next"
@@ -298,7 +298,7 @@ test_deploy_succeeds_without_cmp() {
   make_site "$live_dir" stable
   mkdir -p "$restricted_path"
 
-  for command_name in mkdir rm cp cksum mv; do
+  for command_name in mkdir rm cp mv; do
     ln -s "$(command -v "$command_name")" "$restricted_path/$command_name"
   done
 
@@ -307,14 +307,14 @@ test_deploy_succeeds_without_cmp() {
     AT13_LIVE_DIR="$live_dir" \
     AT13_NEXT_DIR="$next_dir" \
     AT13_PREVIOUS_DIR="$previous_dir" \
-    /bin/sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/no-cmp.log" 2>&1; then
-    fail 'deployment failed when cmp was unavailable'
+    /bin/sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/no-external-comparator.log" 2>&1; then
+    fail 'deployment failed without an external comparison utility'
   fi
 
   assert_file_contains "$live_dir/index.html" candidate
   assert_file_contains "$previous_dir/index.html" stable
-  [ ! -e "$next_dir" ] || fail 'staging directory remains after no-cmp deployment'
-  pass 'deployment succeeds without cmp available'
+  [ ! -e "$next_dir" ] || fail 'staging directory remains after comparator-free deployment'
+  pass 'deployment succeeds without an external comparison utility'
 }
 
 test_first_and_second_deploy
@@ -327,6 +327,6 @@ test_different_target_parents_are_rejected
 test_source_target_overlap_is_rejected
 test_activation_failure_restores_live
 test_staging_failure_cleans_next_and_preserves_live
-test_deploy_succeeds_without_cmp
+test_deploy_succeeds_without_external_comparator
 
 printf 'PASS: all %s deployment integration cases passed\n' "$pass_count"
