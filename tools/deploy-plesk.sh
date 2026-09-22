@@ -59,14 +59,6 @@ TARGET_PARENT=$(parent_dir "$LIVE_DIR")
 
 validate_site "$SOURCE_DIR"
 
-mkdir -p "$TARGET_PARENT"
-rm -rf "$NEXT_DIR"
-mkdir "$NEXT_DIR"
-cp -a "$SOURCE_DIR"/. "$NEXT_DIR"/
-validate_site "$NEXT_DIR"
-cmp -s "$SOURCE_DIR/index.html" "$NEXT_DIR/index.html" \
-  || die 'staged index.html does not match source'
-
 rollback() {
   status=$?
   trap - EXIT HUP INT TERM
@@ -83,6 +75,20 @@ trap rollback EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+mkdir -p "$TARGET_PARENT"
+rm -rf "$NEXT_DIR"
+mkdir "$NEXT_DIR"
+cp -a "$SOURCE_DIR"/. "$NEXT_DIR"/
+validate_site "$NEXT_DIR"
+SOURCE_INDEX_CKSUM=$(cksum < "$SOURCE_DIR/index.html")
+STAGED_INDEX_CKSUM=$(cksum < "$NEXT_DIR/index.html")
+[ "$SOURCE_INDEX_CKSUM" = "$STAGED_INDEX_CKSUM" ] \
+  || die 'staged index.html does not match source'
+
+if [ "${AT13_TEST_FAIL_AFTER_STAGE_COPY:-0}" = 1 ]; then
+  die 'simulated failure after staging copy'
+fi
 
 rm -rf "$PREVIOUS_DIR"
 if [ -e "$LIVE_DIR" ]; then

@@ -263,6 +263,60 @@ test_activation_failure_restores_live() {
   pass 'activation failure restores live'
 }
 
+test_staging_failure_cleans_next_and_preserves_live() {
+  case_root="$TEST_ROOT/staging-failure"
+  source_dir="$case_root/repository/public"
+  live_dir="$case_root/httpdocs/at13"
+  next_dir="$case_root/httpdocs/at13-next"
+  previous_dir="$case_root/httpdocs/at13-previous"
+  make_site "$source_dir" candidate
+  make_site "$live_dir" stable
+
+  if AT13_TEST_FAIL_AFTER_STAGE_COPY=1 \
+    AT13_SOURCE_DIR="$source_dir" \
+    AT13_LIVE_DIR="$live_dir" \
+    AT13_NEXT_DIR="$next_dir" \
+    AT13_PREVIOUS_DIR="$previous_dir" \
+    sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/staging-failure.log" 2>&1; then
+    fail 'staging failure: deployment unexpectedly succeeded'
+  fi
+
+  assert_file_contains "$live_dir/index.html" stable
+  [ ! -e "$next_dir" ] || fail 'staging directory remains after staging failure'
+  [ ! -e "$previous_dir" ] || fail 'previous must not exist after staging failure'
+  pass 'staging failure cleans next and preserves live'
+}
+
+test_deploy_succeeds_without_cmp() {
+  case_root="$TEST_ROOT/no-cmp"
+  source_dir="$case_root/repository/public"
+  live_dir="$case_root/httpdocs/at13"
+  next_dir="$case_root/httpdocs/at13-next"
+  previous_dir="$case_root/httpdocs/at13-previous"
+  restricted_path="$case_root/bin"
+  make_site "$source_dir" candidate
+  make_site "$live_dir" stable
+  mkdir -p "$restricted_path"
+
+  for command_name in mkdir rm cp cksum mv; do
+    ln -s "$(command -v "$command_name")" "$restricted_path/$command_name"
+  done
+
+  if ! PATH="$restricted_path" \
+    AT13_SOURCE_DIR="$source_dir" \
+    AT13_LIVE_DIR="$live_dir" \
+    AT13_NEXT_DIR="$next_dir" \
+    AT13_PREVIOUS_DIR="$previous_dir" \
+    /bin/sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/no-cmp.log" 2>&1; then
+    fail 'deployment failed when cmp was unavailable'
+  fi
+
+  assert_file_contains "$live_dir/index.html" candidate
+  assert_file_contains "$previous_dir/index.html" stable
+  [ ! -e "$next_dir" ] || fail 'staging directory remains after no-cmp deployment'
+  pass 'deployment succeeds without cmp available'
+}
+
 test_first_and_second_deploy
 test_invalid_sources_keep_live
 test_each_empty_target_is_rejected
@@ -272,5 +326,7 @@ test_duplicate_targets_are_rejected
 test_different_target_parents_are_rejected
 test_source_target_overlap_is_rejected
 test_activation_failure_restores_live
+test_staging_failure_cleans_next_and_preserves_live
+test_deploy_succeeds_without_cmp
 
 printf 'PASS: all %s deployment integration cases passed\n' "$pass_count"
