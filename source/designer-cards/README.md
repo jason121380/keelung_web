@@ -1,12 +1,10 @@
-# Designer cards — the originals
+# 設計師卡片 — 母檔
 
-The masters the salon supplied, one finished card per person: portrait on
-top, then the black block carrying name, number and 擅長項目 in AT13's own
-layout. Everything the team section shows was taken from these, so keep them
-— the portraits on the site cannot be regenerated at full quality without
-them.
+店家提供的完成品，每人一張：上方人像，下方黑色區塊放姓名、編號與
+擅長項目（AT13 自家排版）。團隊區塊顯示的一切都取自這些卡片，
+請保留——網站上的人像沒有它們就無法以完整品質重產。
 
-| File | Designer | Card says |
+| 檔案 | 設計師 | 卡片標示 |
 | --- | --- | --- |
 | `no00-eric.png` | Eric | 0號設計師・副理 |
 | `no05-sunny.png` | Sunny（阿晴） | 5號設計師 |
@@ -19,28 +17,26 @@ them.
 | `no13-yuanyuan.png` | 垣垣（垣潔） | 13號設計師 |
 | `front-mary.png` | 瑪莉 | 櫃台公關 |
 
-Received 2026-09-22 (replacing the 2026-08-12 set, which remains in git
-history). This set is not one uniform size — widths run 962 to 1028px — so
-each card carries its own crop rows in the script's table.
+2026-09-22 收到（取代 2026-08-12 那組，舊組仍在 git 歷史中）。
+這組尺寸不一——寬度從 962 到 1028px——因此裁切腳本的表格改為
+每張卡各自帶裁切列。
 
-Two things differ between the cards and the site on purpose. The names lost
-their parenthesised given names for 8號, 11號 and 13號 at the owner's
-request — 5號 and 6號 keep theirs, since 阿晴 and 胖胖 are the nicknames
-they go by. And 櫃台 is spelled 瑪莉 on the site, 瑪利 on the card.
+卡片與網站有兩處刻意不同：應店家要求，8 號、11 號、13 號在網站上
+拿掉括號內的本名；5 號與 6 號保留，因為阿晴、胖胖就是他們慣用的
+暱稱。另外櫃台在網站上寫「瑪莉」，卡片上是「瑪利」。
 
-## Regenerating the portraits
+## 重產人像
 
-`tools/crop-designer-cards.py` crops the photo out of each card to 3:4 —
-starting below the wordmark overlay burned into the top of the frame,
-centred on the face — and writes `public/assets/gen/{,tex/,thumb/}<id>.webp`
-at 1200×1600, 768×1024 and 400×533. The crop box for each card is a table at
-the top of that script; adjust `face_x` there if a crop wants recentring.
+`tools/crop-designer-cards.py` 從每張卡裁出 3:4 的照片——起點在
+燒進畫面頂端的字標（wordmark）下方、以臉部置中——寫出
+`public/assets/gen/{,tex/,thumb/}<id>.webp` 三種尺寸：1200×1600、
+768×1024、400×533。每張卡的裁切框（top、bottom、face_x）是腳本
+頂端的表格；構圖需要調整時改那裡的 `face_x` 再重跑。
 
 ```bash
-python3 tools/crop-designer-cards.py
+python3 tools/crop-designer-cards.py   # 需要 Pillow
 ```
 
-The wording on the cards is not baked into the images: it lives in the
-roster in `public/assets/content-DRgEOFBw.js`, so it stays selectable,
-translatable into English, and responsive. Changing a designer's details
-means editing that roster, not the card.
+卡片上的文字沒有烙進圖片：它存在
+`public/assets/content-DRgEOFBw.js` 的名冊裡，保持可選取、可翻成
+英文、可響應。要改設計師資料就是改那份名冊，不是改卡片。
