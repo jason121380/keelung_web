@@ -15,11 +15,15 @@ AT13 Hair Design（基隆仁三店）形象網站。**所有紀錄與回覆一�
 ## 部署
 
 - **正式網址（canonical）**：<https://www.mlgroup.io/at13/>——名留
-  國際的 WordPress／Plesk 主機（66.42.32.244），`public/` 內容放在
-  docroot 的 `at13/` 目錄；更新需另行上傳（SSH／FTP／Plesk）。
+  國際的 WordPress／Plesk 主機（66.42.32.244）。Plesk Git Manager
+  追蹤 `jason121380/keelung_web` 的 `main`，checkout 到非公開的
+  `/at13-repository`；`tools/deploy-plesk.sh` 只把 `public/` 發布到
+  `/httpdocs/at13`，並在 `/httpdocs/at13-previous` 保留上一版。
 - **GitHub Pages**：<https://jason121380.github.io/keelung_web/>
   （repo：`jason121380/keelung_web`，push main 動到 `public/**` 即自動
-  部署，workflow 為 `.github/workflows/pages.yml`）。
+  部署，workflow 為 `.github/workflows/pages.yml`）；它是獨立備援預覽。
+- `public/` 是正式站唯一可公開的內容；不可直接把 repository 根目錄部署
+  到 `httpdocs`，也不可把 webhook URL 或任何主機憑證寫入 repo。
 - 網站掛在 **`/keelung_web/` 子路徑**下——所有資源引用必須是相對
   路徑，絕對路徑（`/assets/...`）在 Pages 上會 404。
 - `.github/workflows/deploy.yml`（Cloudflare Worker）在 keelung_web
@@ -50,5 +54,5 @@ AT13 Hair Design（基隆仁三店）形象網站。**所有紀錄與回覆一�
   櫃台瑪莉；1–4 號從缺。
 - 人像尺寸：full 1200×1600 / tex 768×1024 / thumb 400×533（皆 3:4）。
 - 卡片現版：2026-09-22 收，寬度 962–1028px 不一。
-- git remote：`origin` = 上游 no1erichair-eng/AT13（唯讀），
-  `pages` = jason121380/keelung_web（部署目標）。
+- git remote：`origin` = `https://github.com/jason121380/keelung_web.git`
+  （正式部署來源）。

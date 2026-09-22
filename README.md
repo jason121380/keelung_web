@@ -2,7 +2,8 @@
 
 AT13 Hair Design 的形象網站靜態檔案。
 
-- **正式站（GitHub Pages）**：<https://jason121380.github.io/keelung_web/>
+- **正式站（Plesk）**：<https://www.mlgroup.io/at13/>
+- **備援預覽（GitHub Pages）**：<https://jason121380.github.io/keelung_web/>
 - 另一份部署（Cloudflare Worker，原始上游）：<https://at13-hair-design.wahmey.workers.dev/>
 
 ## ⚠️ 這是「建置成品」的快照，不是原始碼
@@ -155,7 +156,18 @@ npx wrangler dev
 
 ## 部署
 
-### GitHub Pages（主要）
+### Plesk 正式站（自動）
+
+Push 到 `main` 後，GitHub webhook 會通知 Plesk Git Manager 拉取最新版。
+Plesk checkout 位於非公開的 `/at13-repository`，additional deploy action
+執行 `sh /at13-repository/tools/deploy-plesk.sh`，只把 `public/` 發布到
+`/httpdocs/at13`。
+
+發布腳本會先在 `/httpdocs/at13-next` 驗證新版本，再切換正式目錄；成功後
+`/httpdocs/at13-previous` 保留上一版，以便快速回復。Webhook URL 與主機
+憑證不得提交到 repository。
+
+### GitHub Pages（獨立備援預覽）
 
 Push 到 `main`（動到 `public/**` 時）由 `.github/workflows/pages.yml`
 自動發佈到 <https://jason121380.github.io/keelung_web/>，也可從
