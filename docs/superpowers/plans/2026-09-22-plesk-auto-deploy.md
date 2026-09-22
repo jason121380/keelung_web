@@ -575,3 +575,7 @@ Expected: 測試通過、無 diff error、工作樹乾淨、local 與 origin/mai
 - [ ] **Step 7: 最終回報**
 
 向使用者回報：現在 `main` 每次 push 都會自動更新正式站、正式 URL、保留上一版的位置、失敗時不會替換 live，以及 GitHub Pages 仍保留。不要回傳 webhook URL、session cookie 或 Plesk credential。
+
+## Completion record
+
+- 2026-09-23: webhook end-to-end verification trigger prepared; `public/` unchanged.
