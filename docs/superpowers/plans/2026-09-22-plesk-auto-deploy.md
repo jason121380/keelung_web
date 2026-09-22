@@ -578,4 +578,7 @@ Expected: 測試通過、無 diff error、工作樹乾淨、local 與 origin/mai
 
 ## Completion record
 
-- 2026-09-23: webhook end-to-end verification trigger prepared; `public/` unchanged.
+- 2026-09-23: webhook end-to-end verified with trigger commit `4a514a53f6e552d407bd3a3e2cdd71251a0db60f`; GitHub push delivery succeeded and Plesk automatically pulled and deployed it.
+- Live `https://www.mlgroup.io/at13/` returned HTTP 200. The deployed HTML, entry JavaScript, module preload, and entry CSS hashes matched `public/`; browser console had no errors.
+- `/httpdocs/at13-previous` existed, `/httpdocs/at13-next` did not exist, and the live directory contained only `assets/`, `index.html`, and `robots.txt`.
+- GitHub Pages returned HTTP 200, the Pages workflow was unchanged, and checked deployment ZIP candidates returned HTTP 404.
