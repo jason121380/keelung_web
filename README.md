@@ -129,13 +129,14 @@ Sunny、Wenny、嘎嘎、七七、垣垣 原本掛著佔位用的通用規格，
 項目在右），手機為滿幅人像＋姓名疊在下方，全部維持 3:4。改寫位於
 `index-B7RSM3hh.css` 檔尾兩個註解標記之間。
 
-## 刻意不可被索引
+## 索引狀態
 
-`public/robots.txt` 與 index.html 的
-`<meta name="robots" content="noindex, nofollow">` 同時擋住搜尋引擎。
-依原始碼註解：這是帶著 AT13 真實地址電話的設計提案，設計師人像已是
-店家實照，但作品集、店內、港灣與氛圍圖仍是生成圖。待店家核可、
-其餘圖片也換成實照後，才解除這兩道封鎖。
+2026-09-22 起**開放搜尋引擎收錄**（使用者指示）：robots.txt 改為
+`Allow: /`、meta robots 改為 `index, follow`，並加上 canonical 與
+og:url 指向正式網址 <https://www.mlgroup.io/at13/>。
+
+（歷史：快照期間曾以 robots.txt `Disallow: /` 與 noindex meta 雙重
+封鎖，因當時作品集、店內、港灣與氛圍圖仍是生成圖、僅供提案審閱。）
 
 ## 本地預覽
 

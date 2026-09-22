@@ -14,7 +14,10 @@ AT13 Hair Design（基隆仁三店）形象網站。**所有紀錄與回覆一�
 
 ## 部署
 
-- **正式站**：GitHub Pages <https://jason121380.github.io/keelung_web/>
+- **正式網址（canonical）**：<https://www.mlgroup.io/at13/>——名留
+  國際的 WordPress／Plesk 主機（66.42.32.244），`public/` 內容放在
+  docroot 的 `at13/` 目錄；更新需另行上傳（SSH／FTP／Plesk）。
+- **GitHub Pages**：<https://jason121380.github.io/keelung_web/>
   （repo：`jason121380/keelung_web`，push main 動到 `public/**` 即自動
   部署，workflow 為 `.github/workflows/pages.yml`）。
 - 網站掛在 **`/keelung_web/` 子路徑**下——所有資源引用必須是相對
@@ -36,8 +39,6 @@ AT13 Hair Design（基隆仁三店）形象網站。**所有紀錄與回覆一�
 
 ## 紅線
 
-- **robots.txt 的 `Disallow: /` 與 index.html 的 noindex meta 不可
-  移除**——作品集等圖仍是生成圖，待店家核可才解封（README 有說明）。
 - `source/designer-cards/` 是母檔，只能新增或整組替換，不可刪除。
 - 改壓縮 bundle 時用最小 diff（單點字串替換），改完在 README
   補丁一節記錄「原因＋若有 src 該改哪」。
