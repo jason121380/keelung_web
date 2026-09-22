@@ -42,7 +42,7 @@ deploy() {
     sh "$DEPLOY_SCRIPT"
 }
 
-expect_deploy_failure() {
+expect_deploy_failure() (
   name=$1
   source_dir=$2
   live_dir=$3
@@ -53,7 +53,7 @@ expect_deploy_failure() {
     >"$TEST_ROOT/$name.log" 2>&1; then
     fail "$name: deployment unexpectedly succeeded"
   fi
-}
+)
 
 test_first_and_second_deploy() {
   case_root="$TEST_ROOT/happy-path"
