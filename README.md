@@ -163,9 +163,12 @@ Plesk checkout 位於非公開的 `/at13-repository`，additional deploy action
 執行 `sh /at13-repository/tools/deploy-plesk.sh`，只把 `public/` 發布到
 `/httpdocs/at13`。
 
-發布腳本會先在 `/httpdocs/at13-next` 驗證新版本，再切換正式目錄；成功後
-`/httpdocs/at13-previous` 保留上一版，以便快速回復。Webhook URL 與主機
-憑證不得提交到 repository。
+發布腳本會先取得單一部署鎖，在 `/httpdocs/at13-next` 驗證新版本，保留
+`/httpdocs/at13-previous`，再於既有 live 目錄內逐檔原子更新；即使程序被
+中斷，舊 `index.html` 也不會消失。若主機強制終止程序而留下
+`/httpdocs/.at13-deploy.lock`，必須先確認沒有部署程序仍在執行，才可由
+Plesk File Manager 移除該 stale lock 後重試。Webhook URL 與主機憑證不得
+提交到 repository。
 
 ### GitHub Pages（獨立備援預覽）
 

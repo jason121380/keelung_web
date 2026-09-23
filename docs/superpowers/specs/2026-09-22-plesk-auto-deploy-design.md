@@ -53,14 +53,13 @@ GitHub 不保存任何 Plesk 登入資訊。Webhook URL 視同部署憑證，不
 腳本流程：
 
 1. 使用嚴格模式；任一步驟失敗即停止。
-2. 確認來源含有 `index.html`、`robots.txt` 與 `assets/`。
-3. 清理固定且經檢查的 `at13-next`，重新建立暫存目錄。
-4. 複製 `public/` 的全部內容到 `at13-next`。
-5. 再次確認暫存目錄的必要檔案，並確認複製後的 `index.html` 與來源一致。
-6. 清理固定且經檢查的 `at13-previous`。
-7. 將目前 `at13` 改名為 `at13-previous`。
-8. 將 `at13-next` 改名為 `at13`。
-9. 若第 7 步後發生錯誤且正式目錄不存在，退出陷阱會把 `at13-previous` 還原成 `at13`。
+2. 確認來源含有 `index.html`、`robots.txt` 與 `assets/`，解析實體路徑並拒絕來源／目標的祖先、子目錄與 symlink 重疊。
+3. 以原子 `mkdir` 取得 `/httpdocs/.at13-deploy.lock`；已有鎖時拒絕第二個部署。
+4. 清理固定且經檢查的 `at13-next`，複製 `public/` 並再次驗證。
+5. 將目前 live 複製到暫存 previous，完成後才更新 `/httpdocs/at13-previous`。
+6. 保持 `/httpdocs/at13` 目錄不動，將資產與 `robots.txt` 逐檔複製到同目錄暫存檔，再以 rename 原子替換。
+7. 所有依賴檔案就緒後，最後原子替換 `index.html`；程序在此前被終止時，舊入口檔仍持續提供服務。
+8. 正常退出時清理 staging 與部署鎖。若 `SIGKILL` 留下 stale lock，須人工確認沒有部署程序後再移除。
 
 腳本接受環境變數覆寫四個路徑，方便在本機暫存目錄做整合測試；Plesk 不提供覆寫時使用上述正式預設值。
 
@@ -69,7 +68,9 @@ GitHub 不保存任何 Plesk 登入資訊。Webhook URL 視同部署憑證，不
 - 拉取失敗：Plesk 不執行新的發布，正式站保持不變。
 - 來源驗證失敗：腳本在切換前退出，正式站保持不變。
 - 複製失敗：腳本在切換前退出，正式站保持不變。
-- 切換期間失敗：退出陷阱還原 `at13-previous`。
+- 更新期間失敗：live 目錄與舊 `index.html` 保持可用；已完成的單一資產替換也是原子的。
+- 併發部署：第二個程序因部署鎖直接失敗，不得清除第一個程序的 staging。
+- 強制終止：live 保持可用並留下 lock 阻止後續部署；確認沒有程序後人工移除 stale lock 再重試。
 - 發布後才發現問題：在 Plesk 將 `/httpdocs/at13` 暫存改名，再把 `/httpdocs/at13-previous` 改回 `/httpdocs/at13`。
 - Plesk Git 設定移除時，只移除 repository 連線；正式目錄仍保留。
 

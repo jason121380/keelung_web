@@ -18,7 +18,9 @@ AT13 Hair Design（基隆仁三店）形象網站。**所有紀錄與回覆一�
   國際的 WordPress／Plesk 主機（66.42.32.244）。Plesk Git Manager
   追蹤 `jason121380/keelung_web` 的 `main`，checkout 到非公開的
   `/at13-repository`；`tools/deploy-plesk.sh` 只把 `public/` 發布到
-  `/httpdocs/at13`，並在 `/httpdocs/at13-previous` 保留上一版。
+  `/httpdocs/at13`，以單一部署鎖阻止併發、逐檔原子更新 live，並在
+  `/httpdocs/at13-previous` 保留上一版。若強制終止留下
+  `/httpdocs/.at13-deploy.lock`，確認沒有部署程序後才可移除並重試。
 - **GitHub Pages**：<https://jason121380.github.io/keelung_web/>
   （repo：`jason121380/keelung_web`，push main 動到 `public/**` 即自動
   部署，workflow 為 `.github/workflows/pages.yml`）；它是獨立備援預覽。

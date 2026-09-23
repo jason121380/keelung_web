@@ -5,7 +5,7 @@ SOURCE_DIR=${AT13_SOURCE_DIR-/at13-repository/public}
 LIVE_DIR=${AT13_LIVE_DIR-/httpdocs/at13}
 NEXT_DIR=${AT13_NEXT_DIR-/httpdocs/at13-next}
 PREVIOUS_DIR=${AT13_PREVIOUS_DIR-/httpdocs/at13-previous}
-LIVE_MOVED=0
+LOCK_HELD=0
 
 die() {
   printf 'deploy-plesk: %s\n' "$1" >&2
@@ -39,6 +39,40 @@ validate_site() {
   [ -d "$dir/assets" ] || die "missing assets directory in $dir"
 }
 
+canonical_existing_dir() (
+  [ -d "$1" ] || return 1
+  CDPATH= cd -P -- "$1" 2>/dev/null
+  pwd -P
+)
+
+canonical_future_dir() (
+  canonical_path=$1
+  canonical_suffix=
+
+  while [ ! -d "$canonical_path" ]; do
+    canonical_name=${canonical_path##*/}
+    [ -n "$canonical_name" ] || return 1
+    canonical_suffix="/$canonical_name$canonical_suffix"
+    canonical_path=$(parent_dir "$canonical_path")
+  done
+
+  canonical_base=$(canonical_existing_dir "$canonical_path") || return 1
+  printf '%s%s\n' "$canonical_base" "$canonical_suffix"
+)
+
+paths_overlap() (
+  overlap_left=${1%/}
+  overlap_right=${2%/}
+
+  case "$overlap_left/" in
+    "$overlap_right/"*) return 0 ;;
+  esac
+  case "$overlap_right/" in
+    "$overlap_left/"*) return 0 ;;
+  esac
+  return 1
+)
+
 files_equal() {
   source_file=$1
   staged_file=$2
@@ -67,6 +101,51 @@ files_equal() {
   exec 4<&-
 }
 
+install_file_atomic() (
+  install_source=$1
+  install_target=$2
+  install_temp="${install_target}.at13-next"
+
+  [ -f "$install_source" ] || die "cannot atomically install non-file: $install_source"
+  [ ! -L "$install_source" ] || die "source symlink is not allowed: $install_source"
+  [ ! -L "$install_target" ] || die "target symlink is not allowed: $install_target"
+  [ ! -d "$install_target" ] || die "file target is a directory: $install_target"
+
+  rm -rf "$install_temp"
+  cp -p "$install_source" "$install_temp"
+  mv "$install_temp" "$install_target"
+)
+
+install_tree_atomic() (
+  install_tree_source=$1
+  install_tree_target=$2
+
+  [ -d "$install_tree_source" ] || die "missing source tree: $install_tree_source"
+  [ ! -L "$install_tree_source" ] || die "source symlink is not allowed: $install_tree_source"
+  [ ! -L "$install_tree_target" ] || die "target symlink is not allowed: $install_tree_target"
+  [ ! -e "$install_tree_target" ] || [ -d "$install_tree_target" ] \
+    || die "tree target is not a directory: $install_tree_target"
+  mkdir -p "$install_tree_target"
+
+  for install_entry in \
+    "$install_tree_source"/* \
+    "$install_tree_source"/.[!.]* \
+    "$install_tree_source"/..?*; do
+    [ -e "$install_entry" ] || [ -L "$install_entry" ] || continue
+    install_name=${install_entry##*/}
+    install_destination="$install_tree_target/$install_name"
+
+    [ ! -L "$install_entry" ] || die "source symlink is not allowed: $install_entry"
+    if [ -d "$install_entry" ]; then
+      install_tree_atomic "$install_entry" "$install_destination"
+    elif [ -f "$install_entry" ]; then
+      install_file_atomic "$install_entry" "$install_destination"
+    else
+      die "unsupported source entry: $install_entry"
+    fi
+  done
+)
+
 validate_absolute_path source "$SOURCE_DIR"
 validate_absolute_path live "$LIVE_DIR"
 validate_absolute_path next "$NEXT_DIR"
@@ -85,29 +164,62 @@ TARGET_PARENT=$(parent_dir "$LIVE_DIR")
 [ "$(parent_dir "$PREVIOUS_DIR")" = "$TARGET_PARENT" ] \
   || die 'live, next, and previous must share one parent directory'
 
+PREVIOUS_NEXT_DIR="${PREVIOUS_DIR}-next"
+LOCK_DIR="$TARGET_PARENT/.at13-deploy.lock"
+
+[ "$PREVIOUS_NEXT_DIR" != "$LIVE_DIR" ] || die 'previous staging and live must be different paths'
+[ "$PREVIOUS_NEXT_DIR" != "$NEXT_DIR" ] || die 'previous staging and next must be different paths'
+[ "$PREVIOUS_NEXT_DIR" != "$PREVIOUS_DIR" ] || die 'previous staging and previous must be different paths'
+[ "$LOCK_DIR" != "$LIVE_DIR" ] || die 'deployment lock and live must be different paths'
+[ "$LOCK_DIR" != "$NEXT_DIR" ] || die 'deployment lock and next must be different paths'
+[ "$LOCK_DIR" != "$PREVIOUS_DIR" ] || die 'deployment lock and previous must be different paths'
+
+for target_path in "$LIVE_DIR" "$NEXT_DIR" "$PREVIOUS_DIR" "$PREVIOUS_NEXT_DIR"; do
+  [ ! -L "$target_path" ] || die "deployment target symlink is not allowed: $target_path"
+  [ ! -e "$target_path" ] || [ -d "$target_path" ] \
+    || die "deployment target is not a directory: $target_path"
+done
+
 validate_site "$SOURCE_DIR"
 
-rollback() {
+SOURCE_CANONICAL=$(canonical_existing_dir "$SOURCE_DIR") \
+  || die "cannot resolve source directory: $SOURCE_DIR"
+TARGET_PARENT_CANONICAL=$(canonical_future_dir "$TARGET_PARENT") \
+  || die "cannot resolve target parent: $TARGET_PARENT"
+if paths_overlap "$SOURCE_CANONICAL" "$TARGET_PARENT_CANONICAL"; then
+  die 'source and deployment target parent must not overlap physically'
+fi
+
+cleanup() {
   status=$?
   trap - EXIT HUP INT TERM
 
-  if [ "$LIVE_MOVED" -eq 1 ] && [ ! -e "$LIVE_DIR" ] && [ -d "$PREVIOUS_DIR" ]; then
-    mv "$PREVIOUS_DIR" "$LIVE_DIR" || true
+  if [ "$LOCK_HELD" -eq 1 ]; then
+    [ ! -e "$NEXT_DIR" ] || rm -rf "$NEXT_DIR"
+    [ ! -e "$PREVIOUS_NEXT_DIR" ] || rm -rf "$PREVIOUS_NEXT_DIR"
+    [ ! -e "$LOCK_DIR" ] || rm -rf "$LOCK_DIR"
   fi
-
-  [ ! -e "$NEXT_DIR" ] || rm -rf "$NEXT_DIR"
   exit "$status"
 }
 
-trap rollback EXIT
+trap cleanup EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
 mkdir -p "$TARGET_PARENT"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  die "deployment already in progress or stale lock exists: $LOCK_DIR"
+fi
+LOCK_HELD=1
+
+if [ -n "${AT13_TEST_WAIT_AFTER_LOCK_FILE:-}" ]; then
+  IFS= read -r _at13_test_release < "$AT13_TEST_WAIT_AFTER_LOCK_FILE"
+fi
+
 rm -rf "$NEXT_DIR"
 mkdir "$NEXT_DIR"
-cp -a "$SOURCE_DIR"/. "$NEXT_DIR"/
+cp -Rp "$SOURCE_DIR"/. "$NEXT_DIR"/
 validate_site "$NEXT_DIR"
 files_equal "$SOURCE_DIR/index.html" "$NEXT_DIR/index.html" \
   || die 'staged index.html does not match source'
@@ -116,16 +228,28 @@ if [ "${AT13_TEST_FAIL_AFTER_STAGE_COPY:-0}" = 1 ]; then
   die 'simulated failure after staging copy'
 fi
 
-rm -rf "$PREVIOUS_DIR"
 if [ -e "$LIVE_DIR" ]; then
-  mv "$LIVE_DIR" "$PREVIOUS_DIR"
-  LIVE_MOVED=1
+  validate_site "$LIVE_DIR"
+  rm -rf "$PREVIOUS_NEXT_DIR"
+  mkdir "$PREVIOUS_NEXT_DIR"
+  cp -Rp "$LIVE_DIR"/. "$PREVIOUS_NEXT_DIR"/
+  validate_site "$PREVIOUS_NEXT_DIR"
+  rm -rf "$PREVIOUS_DIR"
+  mv "$PREVIOUS_NEXT_DIR" "$PREVIOUS_DIR"
+else
+  mkdir "$LIVE_DIR"
 fi
 
-if [ "${AT13_TEST_FAIL_AFTER_LIVE_MOVE:-0}" = 1 ]; then
-  die 'simulated failure after moving live'
+install_tree_atomic "$NEXT_DIR/assets" "$LIVE_DIR/assets"
+install_file_atomic "$NEXT_DIR/robots.txt" "$LIVE_DIR/robots.txt"
+
+if [ -n "${AT13_TEST_WAIT_BEFORE_INDEX_SWAP_FILE:-}" ]; then
+  IFS= read -r _at13_test_release < "$AT13_TEST_WAIT_BEFORE_INDEX_SWAP_FILE"
 fi
 
-mv "$NEXT_DIR" "$LIVE_DIR"
-LIVE_MOVED=0
+if [ "${AT13_TEST_FAIL_BEFORE_INDEX_SWAP:-0}" = 1 ]; then
+  die 'simulated failure before index swap'
+fi
+
+install_file_atomic "$NEXT_DIR/index.html" "$LIVE_DIR/index.html"
 printf 'AT13 deployment complete: %s\n' "$LIVE_DIR"
