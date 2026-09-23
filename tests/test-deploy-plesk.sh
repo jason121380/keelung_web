@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+REPO_ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 DEPLOY_SCRIPT="$REPO_ROOT/tools/deploy-plesk.sh"
 TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/at13-deploy-test.XXXXXX")
 trap 'rm -rf "$TEST_ROOT"' EXIT HUP INT TERM
@@ -25,6 +25,19 @@ wait_for_path() {
   while [ ! -e "$path_to_wait_for" ]; do
     attempts=$((attempts + 1))
     [ "$attempts" -lt 100 ] || fail "timed out waiting for: $path_to_wait_for"
+    sleep 0.05
+  done
+}
+
+wait_for_file_content() {
+  file_to_wait_for=$1
+  expected_content=$2
+  attempts=0
+
+  while [ ! -f "$file_to_wait_for" ] \
+    || [ "$(cat "$file_to_wait_for" 2>/dev/null || true)" != "$expected_content" ]; do
+    attempts=$((attempts + 1))
+    [ "$attempts" -lt 100 ] || fail "timed out waiting for content: $file_to_wait_for"
     sleep 0.05
   done
 }
@@ -336,6 +349,47 @@ test_activation_failure_preserves_live() {
   pass 'pre-activation failure preserves live without moving it'
 }
 
+test_staged_and_live_symlinks_fail_before_live_mutation() {
+  case_root="$TEST_ROOT/staged-symlink"
+  source_dir="$case_root/repository/public"
+  live_dir="$case_root/httpdocs/at13"
+  next_dir="$case_root/httpdocs/at13-next"
+  previous_dir="$case_root/httpdocs/at13-previous"
+  make_site "$source_dir" candidate
+  make_site "$live_dir" stable
+  printf 'candidate-first\n' > "$source_dir/assets/a-first.js"
+  printf 'stable-first\n' > "$live_dir/assets/a-first.js"
+  ln -s "$source_dir/index.html" "$source_dir/assets/z-bad.js"
+
+  expect_deploy_failure staged-symlink \
+    "$source_dir" "$live_dir" "$next_dir" "$previous_dir"
+  assert_file_contains "$live_dir/index.html" stable
+  assert_file_contains "$live_dir/assets/a-first.js" stable-first
+  [ ! -e "$previous_dir" ] || fail 'previous mutated before staged symlink rejection'
+
+  case_root="$TEST_ROOT/live-symlink"
+  source_dir="$case_root/repository/public"
+  live_dir="$case_root/httpdocs/at13"
+  next_dir="$case_root/httpdocs/at13-next"
+  previous_dir="$case_root/httpdocs/at13-previous"
+  external_file="$case_root/external.js"
+  make_site "$source_dir" candidate
+  make_site "$live_dir" stable
+  printf 'candidate-first\n' > "$source_dir/assets/a-first.js"
+  printf 'stable-first\n' > "$live_dir/assets/a-first.js"
+  printf 'candidate-target\n' > "$source_dir/assets/z-target.js"
+  printf 'external\n' > "$external_file"
+  ln -s "$external_file" "$live_dir/assets/z-target.js"
+
+  expect_deploy_failure live-symlink \
+    "$source_dir" "$live_dir" "$next_dir" "$previous_dir"
+  assert_file_contains "$live_dir/index.html" stable
+  assert_file_contains "$live_dir/assets/a-first.js" stable-first
+  [ -L "$live_dir/assets/z-target.js" ] || fail 'live symlink mutated before rejection'
+  [ ! -e "$previous_dir" ] || fail 'previous mutated before live symlink rejection'
+  pass 'staged and live symlinks fail before any live mutation'
+}
+
 test_concurrent_deploy_is_rejected() {
   case_root="$TEST_ROOT/concurrent-deploy"
   first_source="$case_root/repository-first/public"
@@ -350,7 +404,7 @@ test_concurrent_deploy_is_rejected() {
   make_site "$live_dir" stable
   mkfifo "$release_fifo"
 
-  AT13_TEST_WAIT_AFTER_LOCK_FILE="$release_fifo" \
+  AT13_TEST_WAIT_AFTER_STAGE_FILE="$release_fifo" \
     AT13_SOURCE_DIR="$first_source" \
     AT13_LIVE_DIR="$live_dir" \
     AT13_NEXT_DIR="$next_dir" \
@@ -358,12 +412,14 @@ test_concurrent_deploy_is_rejected() {
     sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/concurrent-first.log" 2>&1 &
   first_pid=$!
 
-  wait_for_path "$lock_dir"
+  wait_for_path "$next_dir/index.html"
+  assert_file_contains "$next_dir/index.html" first
   if deploy "$second_source" "$live_dir" "$next_dir" "$previous_dir" \
     >"$TEST_ROOT/concurrent-second.log" 2>&1; then
     fail 'concurrent deployment unexpectedly succeeded'
   fi
   assert_file_contains "$live_dir/index.html" stable
+  assert_file_contains "$next_dir/index.html" first
 
   printf 'continue\n' > "$release_fifo"
   wait "$first_pid" || fail 'first deployment failed after releasing lock'
@@ -392,13 +448,25 @@ test_abrupt_termination_keeps_live_available() {
     sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/abrupt-termination.log" 2>&1 &
   deploy_pid=$!
 
-  wait_for_path "$lock_dir"
+  wait_for_file_content "$live_dir/assets/app.js" candidate
+  assert_file_contains "$live_dir/index.html" stable
   kill -KILL "$deploy_pid"
   wait "$deploy_pid" 2>/dev/null || true
 
   assert_file_contains "$live_dir/index.html" stable
   [ -d "$live_dir" ] || fail 'live directory disappeared after abrupt termination'
-  pass 'abrupt termination before index swap keeps live available'
+  [ -d "$lock_dir" ] || fail 'abrupt termination did not leave a protective stale lock'
+  if deploy "$source_dir" "$live_dir" "$next_dir" "$previous_dir" \
+    >"$TEST_ROOT/abrupt-retry-blocked.log" 2>&1; then
+    fail 'retry unexpectedly bypassed stale lock'
+  fi
+  assert_file_contains "$live_dir/index.html" stable
+
+  rmdir "$lock_dir"
+  deploy "$source_dir" "$live_dir" "$next_dir" "$previous_dir"
+  assert_file_contains "$live_dir/index.html" candidate
+  [ ! -e "$lock_dir" ] || fail 'lock remains after recovered deployment'
+  pass 'abrupt termination keeps live available and stale lock recovery succeeds'
 }
 
 test_staging_failure_cleans_next_and_preserves_live() {
@@ -465,6 +533,7 @@ test_different_target_parents_are_rejected
 test_source_target_overlap_is_rejected
 test_physical_path_overlaps_are_rejected
 test_activation_failure_preserves_live
+test_staged_and_live_symlinks_fail_before_live_mutation
 test_concurrent_deploy_is_rejected
 test_abrupt_termination_keeps_live_available
 test_staging_failure_cleans_next_and_preserves_live

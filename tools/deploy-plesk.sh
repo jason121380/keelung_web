@@ -35,14 +35,53 @@ parent_dir() {
 validate_site() {
   dir=$1
   [ -f "$dir/index.html" ] || die "missing index.html in $dir"
+  [ ! -L "$dir/index.html" ] || die "index.html symlink is not allowed in $dir"
   [ -f "$dir/robots.txt" ] || die "missing robots.txt in $dir"
+  [ ! -L "$dir/robots.txt" ] || die "robots.txt symlink is not allowed in $dir"
   [ -d "$dir/assets" ] || die "missing assets directory in $dir"
+  [ ! -L "$dir/assets" ] || die "assets symlink is not allowed in $dir"
 }
 
 canonical_existing_dir() (
   [ -d "$1" ] || return 1
-  CDPATH= cd -P -- "$1" 2>/dev/null
+  CDPATH= cd -P "$1" 2>/dev/null
   pwd -P
+)
+
+preflight_tree() (
+  preflight_source=$1
+  preflight_target=$2
+
+  [ -d "$preflight_source" ] || die "missing source tree: $preflight_source"
+  [ ! -L "$preflight_source" ] || die "source symlink is not allowed: $preflight_source"
+  [ ! -L "$preflight_target" ] || die "target symlink is not allowed: $preflight_target"
+  [ ! -e "$preflight_target" ] || [ -d "$preflight_target" ] \
+    || die "tree target is not a directory: $preflight_target"
+
+  for preflight_entry in \
+    "$preflight_source"/* \
+    "$preflight_source"/.[!.]* \
+    "$preflight_source"/..?*; do
+    [ -e "$preflight_entry" ] || [ -L "$preflight_entry" ] || continue
+    preflight_name=${preflight_entry##*/}
+    preflight_destination="$preflight_target/$preflight_name"
+
+    [ ! -L "$preflight_entry" ] || die "source symlink is not allowed: $preflight_entry"
+    [ ! -L "$preflight_destination" ] \
+      || die "target symlink is not allowed: $preflight_destination"
+    if [ -d "$preflight_entry" ]; then
+      [ ! -e "$preflight_destination" ] || [ -d "$preflight_destination" ] \
+        || die "tree target is not a directory: $preflight_destination"
+      preflight_tree "$preflight_entry" "$preflight_destination"
+    elif [ -f "$preflight_entry" ]; then
+      [ ! -e "$preflight_destination" ] || [ -f "$preflight_destination" ] \
+        || die "file target is not a regular file: $preflight_destination"
+      [ ! -d "$preflight_destination" ] \
+        || die "file target is a directory: $preflight_destination"
+    else
+      die "unsupported source entry: $preflight_entry"
+    fi
+  done
 )
 
 canonical_future_dir() (
@@ -146,6 +185,27 @@ install_tree_atomic() (
   done
 )
 
+install_site_before_index() (
+  install_site_source=$1
+  install_site_target=$2
+
+  for install_site_entry in \
+    "$install_site_source"/* \
+    "$install_site_source"/.[!.]* \
+    "$install_site_source"/..?*; do
+    [ -e "$install_site_entry" ] || [ -L "$install_site_entry" ] || continue
+    install_site_name=${install_site_entry##*/}
+    [ "$install_site_name" != index.html ] || continue
+    install_site_destination="$install_site_target/$install_site_name"
+
+    if [ -d "$install_site_entry" ] && [ ! -L "$install_site_entry" ]; then
+      install_tree_atomic "$install_site_entry" "$install_site_destination"
+    else
+      install_file_atomic "$install_site_entry" "$install_site_destination"
+    fi
+  done
+)
+
 validate_absolute_path source "$SOURCE_DIR"
 validate_absolute_path live "$LIVE_DIR"
 validate_absolute_path next "$NEXT_DIR"
@@ -181,6 +241,7 @@ for target_path in "$LIVE_DIR" "$NEXT_DIR" "$PREVIOUS_DIR" "$PREVIOUS_NEXT_DIR";
 done
 
 validate_site "$SOURCE_DIR"
+[ ! -L "$SOURCE_DIR" ] || die "source directory symlink is not allowed: $SOURCE_DIR"
 
 SOURCE_CANONICAL=$(canonical_existing_dir "$SOURCE_DIR") \
   || die "cannot resolve source directory: $SOURCE_DIR"
@@ -192,7 +253,7 @@ fi
 
 cleanup() {
   status=$?
-  trap - EXIT HUP INT TERM
+  trap - 0 HUP INT TERM
 
   if [ "$LOCK_HELD" -eq 1 ]; then
     [ ! -e "$NEXT_DIR" ] || rm -rf "$NEXT_DIR"
@@ -202,7 +263,7 @@ cleanup() {
   exit "$status"
 }
 
-trap cleanup EXIT
+trap cleanup 0
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
@@ -223,6 +284,11 @@ cp -Rp "$SOURCE_DIR"/. "$NEXT_DIR"/
 validate_site "$NEXT_DIR"
 files_equal "$SOURCE_DIR/index.html" "$NEXT_DIR/index.html" \
   || die 'staged index.html does not match source'
+preflight_tree "$NEXT_DIR" "$LIVE_DIR"
+
+if [ -n "${AT13_TEST_WAIT_AFTER_STAGE_FILE:-}" ]; then
+  IFS= read -r _at13_test_release < "$AT13_TEST_WAIT_AFTER_STAGE_FILE"
+fi
 
 if [ "${AT13_TEST_FAIL_AFTER_STAGE_COPY:-0}" = 1 ]; then
   die 'simulated failure after staging copy'
@@ -240,8 +306,7 @@ else
   mkdir "$LIVE_DIR"
 fi
 
-install_tree_atomic "$NEXT_DIR/assets" "$LIVE_DIR/assets"
-install_file_atomic "$NEXT_DIR/robots.txt" "$LIVE_DIR/robots.txt"
+install_site_before_index "$NEXT_DIR" "$LIVE_DIR"
 
 if [ -n "${AT13_TEST_WAIT_BEFORE_INDEX_SWAP_FILE:-}" ]; then
   IFS= read -r _at13_test_release < "$AT13_TEST_WAIT_BEFORE_INDEX_SWAP_FILE"
