@@ -87,11 +87,14 @@ test_first_and_second_deploy() {
   previous_dir="$case_root/httpdocs/at13-previous"
 
   make_site "$source_dir" v1
+  printf 'legitimate reserved-looking file\n' > "$source_dir/index.html.at13-next"
+  printf 'v1-only\n' > "$source_dir/assets/v1-only.js"
   mkdir -p "$case_root/repository/.git" "$case_root/repository/tools"
   printf 'private repo metadata\n' > "$case_root/repository/README.md"
 
   deploy "$source_dir" "$live_dir" "$next_dir" "$previous_dir"
   assert_file_contains "$live_dir/index.html" v1
+  assert_file_contains "$live_dir/index.html.at13-next" 'legitimate reserved-looking file'
   live_inode=$(ls -di "$live_dir" | awk '{print $1}')
   [ ! -e "$previous_dir" ] || fail 'previous must not exist after first deploy'
   [ ! -e "$live_dir/.git" ] || fail '.git leaked into docroot'
@@ -99,8 +102,11 @@ test_first_and_second_deploy() {
   [ ! -e "$live_dir/tools" ] || fail 'tools leaked into docroot'
 
   make_site "$source_dir" v2
+  rm "$source_dir/assets/v1-only.js"
   deploy "$source_dir" "$live_dir" "$next_dir" "$previous_dir"
   assert_file_contains "$live_dir/index.html" v2
+  assert_file_contains "$live_dir/index.html.at13-next" 'legitimate reserved-looking file'
+  assert_file_contains "$live_dir/assets/v1-only.js" v1-only
   assert_file_contains "$previous_dir/index.html" v1
   [ "$(ls -di "$live_dir" | awk '{print $1}')" = "$live_inode" ] \
     || fail 'live directory was replaced instead of updated in place'
@@ -469,6 +475,43 @@ test_abrupt_termination_keeps_live_available() {
   pass 'abrupt termination keeps live available and stale lock recovery succeeds'
 }
 
+test_abrupt_previous_update_keeps_existing_rollback() {
+  case_root="$TEST_ROOT/abrupt-previous-update"
+  source_dir="$case_root/repository/public"
+  live_dir="$case_root/httpdocs/at13"
+  next_dir="$case_root/httpdocs/at13-next"
+  previous_dir="$case_root/httpdocs/at13-previous"
+  lock_dir="$case_root/httpdocs/.at13-deploy.lock"
+  wait_fifo="$case_root/wait-before-previous-index"
+  make_site "$source_dir" candidate
+  make_site "$live_dir" stable
+  make_site "$previous_dir" older
+  mkfifo "$wait_fifo"
+
+  AT13_TEST_WAIT_BEFORE_PREVIOUS_INDEX_SWAP_FILE="$wait_fifo" \
+    AT13_SOURCE_DIR="$source_dir" \
+    AT13_LIVE_DIR="$live_dir" \
+    AT13_NEXT_DIR="$next_dir" \
+    AT13_PREVIOUS_DIR="$previous_dir" \
+    sh "$DEPLOY_SCRIPT" >"$TEST_ROOT/abrupt-previous-update.log" 2>&1 &
+  deploy_pid=$!
+
+  wait_for_file_content "$previous_dir/assets/app.js" stable
+  assert_file_contains "$previous_dir/index.html" older
+  kill -KILL "$deploy_pid"
+  wait "$deploy_pid" 2>/dev/null || true
+
+  assert_file_contains "$live_dir/index.html" stable
+  assert_file_contains "$previous_dir/index.html" older
+  [ -d "$lock_dir" ] || fail 'previous-update termination did not leave stale lock'
+
+  rmdir "$lock_dir"
+  deploy "$source_dir" "$live_dir" "$next_dir" "$previous_dir"
+  assert_file_contains "$live_dir/index.html" candidate
+  assert_file_contains "$previous_dir/index.html" stable
+  pass 'abrupt previous update keeps existing rollback and retry succeeds'
+}
+
 test_staging_failure_cleans_next_and_preserves_live() {
   case_root="$TEST_ROOT/staging-failure"
   source_dir="$case_root/repository/public"
@@ -536,6 +579,7 @@ test_activation_failure_preserves_live
 test_staged_and_live_symlinks_fail_before_live_mutation
 test_concurrent_deploy_is_rejected
 test_abrupt_termination_keeps_live_available
+test_abrupt_previous_update_keeps_existing_rollback
 test_staging_failure_cleans_next_and_preserves_live
 test_deploy_succeeds_without_external_comparator
 

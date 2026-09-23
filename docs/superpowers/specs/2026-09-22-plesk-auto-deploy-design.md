@@ -56,8 +56,8 @@ GitHub 不保存任何 Plesk 登入資訊。Webhook URL 視同部署憑證，不
 2. 確認來源含有 `index.html`、`robots.txt` 與 `assets/`，解析實體路徑並拒絕來源／目標的祖先、子目錄與 symlink 重疊。
 3. 以原子 `mkdir` 取得 `/httpdocs/.at13-deploy.lock`；已有鎖時拒絕第二個部署。
 4. 清理固定且經檢查的 `at13-next`，複製 `public/` 並再次驗證。
-5. 將目前 live 複製到暫存 previous，完成後才更新 `/httpdocs/at13-previous`。
-6. 保持 `/httpdocs/at13` 目錄不動，將資產與 `robots.txt` 逐檔複製到同目錄暫存檔，再以 rename 原子替換。
+5. 將目前 live 複製到暫存 previous，再以逐檔原子更新、`index.html` 最後的方式更新 `/httpdocs/at13-previous`；既有 rollback 目錄不會先被刪除。
+6. 保持 `/httpdocs/at13` 目錄不動，將已驗證的 `at13-next` 資產與 `robots.txt` 逐檔以同檔案系統 rename 原子替換到 live。
 7. 所有依賴檔案就緒後，最後原子替換 `index.html`；程序在此前被終止時，舊入口檔仍持續提供服務。
 8. 正常退出時清理 staging 與部署鎖。若 `SIGKILL` 留下 stale lock，須人工確認沒有部署程序後再移除。
 

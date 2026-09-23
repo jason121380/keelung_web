@@ -143,16 +143,13 @@ files_equal() {
 install_file_atomic() (
   install_source=$1
   install_target=$2
-  install_temp="${install_target}.at13-next"
 
   [ -f "$install_source" ] || die "cannot atomically install non-file: $install_source"
   [ ! -L "$install_source" ] || die "source symlink is not allowed: $install_source"
   [ ! -L "$install_target" ] || die "target symlink is not allowed: $install_target"
   [ ! -d "$install_target" ] || die "file target is a directory: $install_target"
 
-  rm -rf "$install_temp"
-  cp -p "$install_source" "$install_temp"
-  mv "$install_temp" "$install_target"
+  mv "$install_source" "$install_target"
 )
 
 install_tree_atomic() (
@@ -300,8 +297,15 @@ if [ -e "$LIVE_DIR" ]; then
   mkdir "$PREVIOUS_NEXT_DIR"
   cp -Rp "$LIVE_DIR"/. "$PREVIOUS_NEXT_DIR"/
   validate_site "$PREVIOUS_NEXT_DIR"
-  rm -rf "$PREVIOUS_DIR"
-  mv "$PREVIOUS_NEXT_DIR" "$PREVIOUS_DIR"
+  preflight_tree "$PREVIOUS_NEXT_DIR" "$PREVIOUS_DIR"
+  [ -e "$PREVIOUS_DIR" ] || mkdir "$PREVIOUS_DIR"
+  install_site_before_index "$PREVIOUS_NEXT_DIR" "$PREVIOUS_DIR"
+
+  if [ -n "${AT13_TEST_WAIT_BEFORE_PREVIOUS_INDEX_SWAP_FILE:-}" ]; then
+    IFS= read -r _at13_test_release < "$AT13_TEST_WAIT_BEFORE_PREVIOUS_INDEX_SWAP_FILE"
+  fi
+
+  install_file_atomic "$PREVIOUS_NEXT_DIR/index.html" "$PREVIOUS_DIR/index.html"
 else
   mkdir "$LIVE_DIR"
 fi
