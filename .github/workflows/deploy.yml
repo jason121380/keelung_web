@@ -25,7 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24.22.1
 
       # Fail with something readable rather than a wrangler auth error.
       - name: Check the API token is configured
